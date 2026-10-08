@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizer: Recursion vs DP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712; /* gray-950 */
+            color: #e2e8f0; /* slate-200 */
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .code-font { font-family: 'Fira Code', monospace; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+        @keyframes pulse-glow-gold {
+            0%, 100% { box-shadow: 0 0 15px rgba(250, 204, 21, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.8); }
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        .animate-pop { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        .tree-node {
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            z-index: 10;
+            transition: all 0.4s ease;
+            transform: translate(-50%, -50%);
+            border: 2px solid #4b5563; /* gray-600 */
+            background-color: #111827; /* gray-900 */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        }
+
+        /* State Classes */
+        .node-active { border-color: #3b82f6; background-color: #1e3a8a; box-shadow: 0 0 20px rgba(59, 130, 246, 0.6); color: #bfdbfe; }
+        .node-pruned { border-color: #ef4444; background-color: #7f1d1d; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); color: #fecaca; }
+        .node-cache { border-color: #eab308; background-color: #713f12; box-shadow: 0 0 25px rgba(234, 179, 8, 0.8); color: #fef08a; animation: pulse-glow-gold 2s infinite; }
+        .node-success { border-color: #22c55e; background-color: #14532d; box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); color: #bbf7d0; }
+        .node-done { opacity: 0.5; border-color: #374151; background-color: #111827; }
+
+        .svg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .tree-edge {
+            stroke: #4b5563;
+            stroke-width: 2;
+            transition: all 0.4s ease;
+        }
+        .edge-active { stroke: #3b82f6; stroke-width: 3; }
+        .edge-pruned { stroke: #ef4444; stroke-width: 2; stroke-dasharray: 4; opacity: 0.5; }
+        .edge-cache { stroke: #eab308; stroke-width: 3; filter: drop-shadow(0 0 8px #eab308); }
+
+        .typewriter-text::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        /* Grid transitions */
+        .dp-cell { transition: all 0.3s ease; }
+        .dp-cell-active { background-color: #eab308; color: #000; font-weight: bold; transform: scale(1.1); box-shadow: 0 0 15px rgba(234, 179, 8, 0.6); }
+    </style>
+</head>
+<body class="flex flex-col h-screen text-sm">
+
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md p-4 flex justify-between items-center z-20 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center font-bold text-white shadow-lg">V</div>
+            <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">AlgoVis: State Space</h1>
+        </div>
+        
+        <div class="flex items-center gap-4 bg-gray-900 p-1.5 rounded-lg border border-gray-800">
+            <button id="btn-rec" class="px-4 py-1.5 rounded-md text-gray-400 hover:text-white transition-colors bg-gray-800 shadow-inner font-medium">Standard Recursion</button>
+            <button id="btn-back" class="px-4 py-1.5 rounded-md text-gray-400 hover:text-white transition-colors">Backtracking</button>
+            <button id="btn-dp" class="px-4 py-1.5 rounded-md text-gray-400 hover:text-white transition-colors">Dynamic Prog.</button>
+            <div class="w-px h-6 bg-gray-700 mx-2"></div>
+            <button id="btn-race" class="px-4 py-1.5 rounded-md font-bold text-white bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 shadow-[0_0_10px_rgba(239,68,68,0.4)] transition-all">Race Mode</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-step" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg flex items-center gap-2 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                Step
+            </button>
+            <button id="btn-play" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium flex items-center gap-2 transition-colors shadow-[0_0_10px_rgba(37,99,235,0.4)]">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
+                Auto Play
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative">
+        <!-- Center: Tree Visualization -->
+        <section id="vis-container" class="flex-1 relative bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjA1KSIvPjwvc3ZnPg==')]">
+            <svg id="edge-layer" class="svg-layer"></svg>
+            <div id="node-layer" class="absolute inset-0"></div>
+            
+            <!-- Context Info -->
+            <div class="absolute top-6 left-6 bg-gray-900/80 p-4 border border-gray-800 rounded-xl backdrop-blur-sm">
+                <h3 class="text-xs text-gray-400 uppercase tracking-wider mb-2 font-bold">Problem Definition</h3>
+                <div class="text-lg">Subset Sum</div>
+                <div class="text-sm text-gray-400 mt-1 code-font">Array: <span class="text-blue-400">[2, 2, 4]</span></div>
+                <div class="text-sm text-gray-400 code-font">Target: <span class="text-green-400">6</span></div>
+            </div>
+
+            <!-- Stats Overlay -->
+            <div class="absolute top-6 right-6 bg-gray-900/80 p-4 border border-gray-800 rounded-xl backdrop-blur-sm min-w-[150px]">
+                <h3 class="text-xs text-gray-400 uppercase tracking-wider mb-2 font-bold">Metrics</h3>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm text-gray-500">Steps:</span>
+                    <span id="stat-steps" class="font-mono text-white">0</span>
+                </div>
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm text-gray-500">Max Depth:</span>
+                    <span id="stat-depth" class="font-mono text-white">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">Cache Hits:</span>
+                    <span id="stat-hits" class="font-mono text-yellow-400">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side Panels (DP Table & Call Stack) -->
+        <aside id="side-panel" class="w-80 bg-gray-900 border-l border-gray-800 flex flex-col shrink-0 z-10 shadow-2xl transition-all">
+            <!-- DP Cache Table -->
+            <div class="flex-1 border-b border-gray-800 p-4 overflow-hidden flex flex-col">
+                <h3 class="text-xs text-gray-400 uppercase tracking-wider mb-3 font-bold flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-500"></span> Memoization Table
+                </h3>
+                <div class="flex-1 overflow-auto">
+                    <table class="w-full text-center border-collapse text-xs">
+                        <thead>
+                            <tr>
+                                <th class="border border-gray-700 p-1 bg-gray-800 text-gray-400 font-normal">Idx \ Sum</th>
+                                <!-- Dynamic headers injected by JS -->
+                            </tr>
+                        </thead>
+                        <tbody id="dp-table-body">
+                            <!-- Dynamic rows injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 italic">Caches result for state: (Index, Current Sum)</p>
+            </div>
+
+            <!-- Call Stack -->
+            <div class="h-1/2 p-4 flex flex-col">
+                <h3 class="text-xs text-gray-400 uppercase tracking-wider mb-3 font-bold flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span> Call Stack
+                </h3>
+                <div id="call-stack" class="flex-1 overflow-y-auto flex flex-col-reverse gap-2 font-mono text-xs">
+                    <!-- Stack frames injected here -->
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="h-32 bg-black border-t border-gray-800 p-6 flex flex-col justify-center relative shrink-0 z-20">
+        <div class="absolute inset-0 bg-gradient-to-t from-black to-transparent pointer-events-none"></div>
+        <div class="max-w-4xl mx-auto w-full relative">
+            <div class="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                <div class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div> Director's Commentary
+            </div>
+            <div id="subtitle-box" class="text-2xl font-medium text-white typewriter-text tracking-wide h-8">
+                Ready to visualize the algorithm...
+            </div>
+        </div>
+    </footer>
+
+    <!-- Race Mode Overlay (Hidden initially) -->
+    <div id="race-overlay" class="fixed inset-0 bg-gray-950 z-50 hidden flex-col">
+        <header class="p-4 border-b border-gray-800 flex justify-between items-center bg-black">
+            <h2 class="text-2xl font-bold text-white"><span class="text-red-500">Brute Force</span> vs <span class="text-yellow-400">Dynamic Programming</span></h2>
+            <button id="btn-close-race" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded text-white font-medium">Close Race</button>
+        </header>
+        <div class="flex-1 flex w-full h-full">
+            <div class="flex-1 border-r border-gray-800 relative overflow-hidden flex flex-col">
+                <div class="p-3 text-center bg-gray-900 border-b border-gray-800 font-bold text-red-400 uppercase tracking-widest text-xs">Recursion (Exponential)</div>
+                <div id="race-left" class="flex-1 relative"></div>
+                <div class="absolute bottom-4 left-4 text-white text-xl font-mono">Steps: <span id="race-left-steps">0</span></div>
+            </div>
+            <div class="flex-1 relative overflow-hidden flex flex-col">
+                <div class="p-3 text-center bg-gray-900 border-b border-gray-800 font-bold text-yellow-400 uppercase tracking-widest text-xs">DP (Linear Time)</div>
+                <div id="race-right" class="flex-1 relative"></div>
+                <div class="absolute bottom-4 left-4 text-white text-xl font-mono">Steps: <span id="race-right-steps">0</span></div>
+            </div>
+        </div>
+        <div id="race-winner" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden bg-black/60 backdrop-blur-sm">
+            <div class="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] scale-0 transition-transform duration-500" id="winner-text">DP WINS BY A MILE!</div>
+        </div>
+    </div>
+
+    <script>
+        const arr = [2, 2, 4];
+        const target = 6;
+        let currentMode = 'RECURSION'; // RECURSION, BACKTRACK, DP
+        let trace = [];
+        let currentStep = 0;
+        let isPlaying = false;
+        let playInterval = null;
+        let playSpeed = 600;
+
+        // DOM Elements
+        const nodeLayer = document.getElementById('node-layer');
+        const edgeLayer = document.getElementById('edge-layer');
+        const callStackEl = document.getElementById('call-stack');
+        const dpTableBody = document.getElementById('dp-table-body');
+        const subtitleBox = document.getElementById('subtitle-box');
+        const btnRec = document.getElementById('btn-rec');
+        const btnBack = document.getElementById('btn-back');
+        const btnDp = document.getElementById('btn-dp');
+        const btnStep = document.getElementById('btn-step');
+        const btnPlay = document.getElementById('btn-play');
+        const statSteps = document.getElementById('stat-steps');
+        const statDepth = document.getElementById('stat-depth');
+        const statHits = document.getElementById('stat-hits');
+
+        // State variables for visualization rendering
+        let renderedNodes = {};
+        let activeNodesPath = [];
+        let dpCacheState = {};
+        let maxDepthReached = 0;
+        let cacheHitsCount = 0;
+
+        // Generates the execution steps (Trace) for the selected paradigm
+        function generateTrace(mode) {
+            let localTrace = [];
+            let memo = {};
+            let nodeCounter = 0;
+            let currentDepth = 0;
+
+            function solve(idx, sum, parentId, isLeftChild) {
+                let id = `n_${nodeCounter++}`;
+                currentDepth++;
+                
+                // Calculate Logical position
+                let depth = currentDepth - 1;
+                let xOffset = 0;
+                if (parentId) {
+                    let parentNode = localTrace.find(t => t.id === parentId);
+                    // Standard binary tree spread
+                    let spread = 25 / Math.pow(1.5, depth);
+                    xOffset = isLeftChild ? parentNode.x - spread : parentNode.x + spread;
+                } else {
+                    xOffset = 50; // Center root
+                }
+                let yOffset = 15 + (depth * 22);
+
+                let nodeData = { type: 'CALL', id, parentId, idx, sum, depth, x: xOffset, y: yOffset, note: `solve(${idx}, ${sum})` };
+                localTrace.push(nodeData);
+
+                // Paradigm Specific Logic
+                if (mode === 'DP') {
+                    let key = `${idx}-${sum}`;
+                    if (memo[key] !== undefined) {
+                        localTrace.push({ type: 'CACHE_HIT', id, key, value: memo[key], note: `Wait... we've been here. DP Cache hit!` });
+                        localTrace.push({ type: 'RETURN', id, value: memo[key] });
+                        currentDepth--;
+                        return memo[key];
+                    }
+                }
+
+                if (mode === 'BACKTRACK' || mode === 'DP') {
+                    if (sum > target) {
+                        localTrace.push({ type: 'PRUNE', id, note: `Constraint Violated! ${sum} > ${target}. Pruning branch.` });
+                        localTrace.push({ type: 'RETURN', id, value: false });
+                        currentDepth--;
+                        return false;
+                    }
+                }
+
+                if (sum === target) {
+                    localTrace.push({ type: 'SUCCESS', id, note: `Target reached! Found valid subset.` });
+                    if (mode === 'DP') memo[`${idx}-${sum}`] = true;
+                    localTrace.push({ type: 'RETURN', id, value: true });
+                    currentDepth--;
+                    return true;
+                }
+
+                if (idx === arr.length) {
+                    localTrace.push({ type: 'BASE_CASE', id, note: `Array ended. Target not met.` });
+                    if (mode === 'DP') memo[`${idx}-${sum}`] = false;
+                    localTrace.push({ type: 'RETURN', id, value: false });
+                    currentDepth--;
+                    return false;
+                }
+
+                // Left Branch: Exclude element
+                localTrace.push({ type: 'BRANCHING', note: `Excluding arr[${idx}] (${arr[idx]})...` });
+                let res1 = solve(idx + 1, sum, id, true);
+                
+                if (res1) {
+                    if (mode === 'DP') memo[`${idx}-${sum}`] = true;
+                    localTrace.push({ type: 'RETURN', id, value: true });
+                    currentDepth--;
+                    return true;
+                }
+
+                // Right Branch: Include element
+                localTrace.push({ type: 'BRANCHING', note: `Including arr[${idx}] (${arr[idx]})...` });
+                let res2 = solve(idx + 1, sum + arr[idx], id, false);
+                
+                if (mode === 'DP') memo[`${idx}-${sum}`] = res2;
+                localTrace.push({ type: 'RETURN', id, value: res2 });
+                currentDepth--;
+                return res2;
+            }
+
+            solve(0, 0, null, false);
+            return localTrace;
+        }
+
+        function initDPTable() {
+            // Target is 6, so cols 0-6
+            let theadTr = document.querySelector('#side-panel thead tr');
+            theadTr.innerHTML = '<th class="border border-gray-700 p-1 bg-gray-800 text-gray-400 font-normal w-12">I \\ S</th>';
+            for (let s = 0; s <= target; s++) {
+                theadTr.innerHTML += `<th class="border border-gray-700 p-1 bg-gray-800 text-gray-300 w-8">${s}</th>`;
+            }
+
+            dpTableBody.innerHTML = '';
+            for (let i = 0; i <= arr.length; i++) {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td class="border border-gray-700 p-1 bg-gray-800 text-gray-300 font-bold">${i}</td>`;
+                for (let s = 0; s <= target; s++) {
+                    tr.innerHTML += `<td id="cell-${i}-${s}" class="border border-gray-700 p-1 dp-cell text-gray-600">-</td>`;
+                }
+                dpTableBody.appendChild(tr);
+            }
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            // Update Buttons UI
+            [btnRec, btnBack, btnDp].forEach(b => {
+                b.classList.remove('bg-gray-800', 'shadow-inner', 'text-white');
+                b.classList.add('text-gray-400');
+            });
+            let activeBtn = mode === 'RECURSION' ? btnRec : (mode === 'BACKTRACK' ? btnBack : btnDp);
+            activeBtn.classList.add('bg-gray-800', 'shadow-inner', 'text-white');
+            activeBtn.classList.remove('text-gray-400');
+
+            resetVisualization();
+        }
+
+        function resetVisualization() {
+            stopPlay();
+            trace = generateTrace(currentMode);
+            currentStep = 0;
+            nodeLayer.innerHTML = '';
+            edgeLayer.innerHTML = '';
+            callStackEl.innerHTML = '';
+            renderedNodes = {};
+            activeNodesPath = [];
+            dpCacheState = {};
+            maxDepthReached = 0;
+            cacheHitsCount = 0;
+            statSteps.innerText = '0';
+            statDepth.innerText = '0';
+            statHits.innerText = '0';
+            initDPTable();
+            typeWriter("Algorithm ready. Press Step or Play to begin.", "normal");
+        }
+
+        // Subtitle Typewriter Effect
+        let typeTimeout = null;
+        function typeWriter(text, type) {
+            clearTimeout(typeTimeout);
+            subtitleBox.innerHTML = '';
+            subtitleBox.className = 'text-2xl font-medium tracking-wide h-8 typewriter-text ';
+            
+            if (type === 'prune') subtitleBox.classList.add('text-red-400');
+            else if (type === 'cache') subtitleBox.classList.add('text-yellow-400');
+            else if (type === 'success') subtitleBox.classList.add('text-green-400');
+            else subtitleBox.classList.add('text-white');
+
+            let i = 0;
+            function typeChar() {
+                if (i < text.length) {
+                    subtitleBox.innerHTML += text.charAt(i);
+                    i++;
+                    typeTimeout = setTimeout(typeChar, 25);
+                }
+            }
+            typeChar();
+        }
+
+        function processStep(step) {
+            statSteps.innerText = currentStep + 1;
+
+            if (step.type === 'CALL') {
+                // Update stats
+                if (step.depth > maxDepthReached) {
+                    maxDepthReached = step.depth;
+                    statDepth.innerText = maxDepthReached;
+                }
+
+                // Draw Node
+                let el = document.createElement('div');
+                el.id = step.id;
+                el.className = 'tree-node animate-pop node-active';
+                el.style.left = `${step.x}%`;
+                el.style.top = `${step.y}%`;
+                el.innerText = step.sum; // Display current sum
+                nodeLayer.appendChild(el);
+                renderedNodes[step.id] = el;
+
+                // Draw Edge
+                if (step.parentId) {
+                    let pEl = renderedNodes[step.parentId];
+                    let line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('id', `edge-${step.id}`);
+                    line.setAttribute('x1', pEl.style.left);
+                    line.setAttribute('y1', pEl.style.top);
+                    line.setAttribute('x2', el.style.left);
+                    line.setAttribute('y2', el.style.top);
+                    line.setAttribute('class', 'tree-edge edge-active');
+                    edgeLayer.appendChild(line);
+                }
+
+                // Push to Call Stack
+                let frame = document.createElement('div');
+                frame.id = `frame-${step.id}`;
+                frame.className = 'p-2 bg-blue-900/40 border-l-2 border-blue-500 rounded text-blue-100 flex justify-between animate-pop';
+                frame.innerHTML = `<span>solve(${step.idx}, <span class="text-white font-bold">${step.sum}</span>)</span> <span class="text-blue-400/50">L${step.depth}</span>`;
+                callStackEl.prepend(frame);
+
+                typeWriter(`Evaluating subset starting at index ${step.idx}, current sum: ${step.sum}`, 'normal');
+            }
+            else if (step.type === 'BRANCHING') {
+                typeWriter(step.note, 'normal');
+            }
+            else if (step.type === 'PRUNE') {
+                let el = renderedNodes[step.id];
+                if (el) {
+                    el.className = 'tree-node node-pruned animate-shake';
+                    let edge = document.getElementById(`edge-${step.id}`);
+                    if (edge) edge.className.baseVal = 'tree-edge edge-pruned';
+                }
+                typeWriter(step.note, 'prune');
+                
+                // Audio cue simulation via visual harshness
+                document.body.style.backgroundColor = '#1a0505'; // Slight red flash
+                setTimeout(() => document.body.style.backgroundColor = '#030712', 150);
+            }
+            else if (step.type === 'CACHE_HIT') {
+                cacheHitsCount++;
+                statHits.innerText = cacheHitsCount;
+
+                let el = renderedNodes[step.id];
+                if (el) {
+                    el.className = 'tree-node node-cache animate-pop';
+                    let edge = document.getElementById(`edge-${step.id}`);
+                    if (edge) edge.className.baseVal = 'tree-edge edge-cache';
+                }
+
+                // Flash DP Cell
+                let cell = document.getElementById(`cell-${step.key}`);
+                if (cell) {
+                    cell.className = 'border border-gray-700 p-1 dp-cell dp-cell-active';
+                    cell.innerText = step.value ? 'T' : 'F';
+                    setTimeout(() => {
+                        cell.className = 'border border-gray-700 p-1 dp-cell text-yellow-400 bg-gray-800 font-bold';
+                    }, 1000);
+                }
+
+                typeWriter(step.note, 'cache');
+                
+                // Audio cue visual
+                document.body.style.boxShadow = 'inset 0 0 50px rgba(250, 204, 21, 0.1)';
+                setTimeout(() => document.body.style.boxShadow = 'none', 300);
+            }
+            else if (step.type === 'SUCCESS') {
+                let el = renderedNodes[step.id];
+                if (el) el.className = 'tree-node node-success animate-pop';
+                typeWriter(step.note, 'success');
+            }
+            else if (step.type === 'BASE_CASE') {
+                let el = renderedNodes[step.id];
+                if (el) el.className = 'tree-node node-done';
+            }
+            else if (step.type === 'RETURN') {
+                // Update DP table visually if in DP mode and calculated
+                if (currentMode === 'DP') {
+                    // Extract idx and sum from the node since step only has id
+                    let callStep = trace.find(t => t.id === step.id && t.type === 'CALL');
+                    if (callStep) {
+                        let cell = document.getElementById(`cell-${callStep.idx}-${callStep.sum}`);
+                        if (cell && cell.innerText === '-') {
+                            cell.innerText = step.value ? 'T' : 'F';
+                            cell.classList.add(step.value ? 'text-green-400' : 'text-red-400', 'font-bold');
+                        }
+                    }
+                }
+
+                // Pop call stack
+                let frame = document.getElementById(`frame-${step.id}`);
+                if (frame) {
+                    frame.style.opacity = '0.5';
+                    setTimeout(() => frame.remove(), 200);
+                }
+
+                // Dim node
+                let el = renderedNodes[step.id];
+                if (el && !el.classList.contains('node-cache') && !el.classList.contains('node-pruned') && !el.classList.contains('node-success')) {
+                    el.className = 'tree-node node-done';
+                }
+                
+                let edge = document.getElementById(`edge-${step.id}`);
+                if (edge && edge.className.baseVal === 'tree-edge edge-active') {
+                    edge.className.baseVal = 'tree-edge';
+                }
+            }
+        }
+
+        function stepForward() {
+            if (currentStep < trace.length) {
+                processStep(trace[currentStep]);
+                currentStep++;
+            } else {
+                stopPlay();
+                typeWriter("Execution finished. All paths explored.", "success");
+            }
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                stopPlay();
+            } else {
+                if (currentStep >= trace.length) resetVisualization();
+                isPlaying = true;
+                btnPlay.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Pause';
+                btnPlay.classList.add('bg-red-600', 'hover:bg-red-500');
+                btnPlay.classList.remove('bg-blue-600', 'hover:bg-blue-500', 'shadow-[0_0_10px_rgba(37,99,235,0.4)]');
+                playInterval = setInterval(stepForward, playSpeed);
+            }
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            clearInterval(playInterval);
+            btnPlay.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg> Auto Play';
+            btnPlay.classList.add('bg-blue-600', 'hover:bg-blue-500', 'shadow-[0_0_10px_rgba(37,99,235,0.4)]');
+            btnPlay.classList.remove('bg-red-600', 'hover:bg-red-500');
+        }
+
+        // Bind Buttons
+        btnRec.addEventListener('click', () => setMode('RECURSION'));
+        btnBack.addEventListener('click', () => setMode('BACKTRACK'));
+        btnDp.addEventListener('click', () => setMode('DP'));
+        btnStep.addEventListener('click', () => { stopPlay(); stepForward(); });
+        btnPlay.addEventListener('click', togglePlay);
+
+        const raceOverlay = document.getElementById('race-overlay');
+        const btnRace = document.getElementById('btn-race');
+        const btnCloseRace = document.getElementById('btn-close-race');
+        const winnerText = document.getElementById('winner-text');
+        let raceInterval = null;
+
+        function renderMiniNode(container, step, allNodes) {
+            if (step.type === 'CALL') {
+                let el = document.createElement('div');
+                el.style.position = 'absolute';
+                el.style.width = '12px';
+                el.style.height = '12px';
+                el.style.borderRadius = '50%';
+                el.style.left = `${step.x}%`;
+                el.style.top = `${step.y}%`;
+                el.style.transform = 'translate(-50%, -50%)';
+                el.style.backgroundColor = '#3b82f6';
+                container.appendChild(el);
+                allNodes[step.id] = el;
+            } else if (step.type === 'PRUNE' || step.type === 'BASE_CASE' || step.type === 'SUCCESS') {
+                if (allNodes[step.id]) {
+                    allNodes[step.id].style.backgroundColor = step.type === 'PRUNE' ? '#ef4444' : (step.type === 'SUCCESS' ? '#22c55e' : '#4b5563');
+                }
+            } else if (step.type === 'CACHE_HIT') {
+                if (allNodes[step.id]) {
+                    allNodes[step.id].style.backgroundColor = '#eab308';
+                    allNodes[step.id].style.boxShadow = '0 0 10px #eab308';
+                    allNodes[step.id].style.transform = 'translate(-50%, -50%) scale(1.5)';
+                }
+            }
+        }
+
+        btnRace.addEventListener('click', () => {
+            stopPlay();
+            raceOverlay.classList.remove('hidden');
+            raceOverlay.classList.add('flex');
+            document.getElementById('race-left').innerHTML = '';
+            document.getElementById('race-right').innerHTML = '';
+            document.getElementById('race-left-steps').innerText = '0';
+            document.getElementById('race-right-steps').innerText = '0';
+            document.getElementById('race-winner').classList.add('hidden');
+            winnerText.classList.replace('scale-100', 'scale-0');
+
+            let traceRec = generateTrace('RECURSION');
+            let traceDP = generateTrace('DP');
+            
+            let iRec = 0, iDP = 0;
+            let nodesRec = {}, nodesDP = {};
+            
+            raceInterval = setInterval(() => {
+                let doneRec = iRec >= traceRec.length;
+                let doneDP = iDP >= traceDP.length;
+
+                if (!doneRec) {
+                    renderMiniNode(document.getElementById('race-left'), traceRec[iRec], nodesRec);
+                    document.getElementById('race-left-steps').innerText = iRec;
+                    iRec++;
+                }
+                
+                if (!doneDP) {
+                    renderMiniNode(document.getElementById('race-right'), traceDP[iDP], nodesDP);
+                    document.getElementById('race-right-steps').innerText = iDP;
+                    iDP++;
+                }
+
+                if (doneDP && !doneRec && !winnerText.classList.contains('scale-100')) {
+                    document.getElementById('race-winner').classList.remove('hidden');
+                    // Force reflow
+                    void winnerText.offsetWidth;
+                    winnerText.classList.replace('scale-0', 'scale-100');
+                }
+
+                if (doneRec && doneDP) {
+                    clearInterval(raceInterval);
+                }
+            }, 30); // Very fast for race mode
+        });
+
+        btnCloseRace.addEventListener('click', () => {
+            clearInterval(raceInterval);
+            raceOverlay.classList.add('hidden');
+            raceOverlay.classList.remove('flex');
+        });
+
+        // Initialize application
+        window.onload = () => {
+            setMode('RECURSION');
+        };
+
+    </script>
+</body>
+</html>

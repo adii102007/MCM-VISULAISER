@@ -1,0 +1,4496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Matrix Chain Multiplication Visualizer</title>
+
+<style>
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+
+    background:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(20, 90, 160, 0.10),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 85% 25%,
+            rgba(110, 40, 160, 0.10),
+            transparent 35%
+        ),
+        #080c12;
+
+    color: #e8eef7;
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+header {
+    height: 82px;
+    padding: 20px 26px;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.08);
+
+    background:
+        rgba(7,11,17,.95);
+}
+
+.title {
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.subtitle {
+    margin-top: 4px;
+
+    font-size: 11px;
+
+    color: #718096;
+}
+
+.live {
+    position: absolute;
+
+    right: 25px;
+    top: 20px;
+
+    padding: 7px 12px;
+
+    border:
+        1px solid rgba(80,220,150,.25);
+
+    border-radius: 20px;
+
+    font-size: 10px;
+
+    color: #65e6a4;
+}
+
+.live-dot {
+    display: inline-block;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 50%;
+
+    background: #45e696;
+
+    box-shadow:
+        0 0 12px #45e696;
+
+    margin-right: 6px;
+}
+
+
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+.controls {
+    height: 68px;
+
+    margin:
+        16px 5.8% 12px;
+
+    padding: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    background:
+        rgba(20,27,37,.82);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    border-radius: 10px;
+}
+
+label {
+    color: #7f8b9d;
+
+    font-size: 11px;
+
+    margin-left: 4px;
+}
+
+input {
+    width: 165px;
+    height: 34px;
+
+    background: #080d14;
+
+    border:
+        1px solid #263241;
+
+    border-radius: 7px;
+
+    color: white;
+
+    padding: 0 10px;
+
+    outline: none;
+}
+
+input:focus {
+    border-color: #409cff;
+}
+
+button {
+    height: 34px;
+
+    border:
+        1px solid #344154;
+
+    border-radius: 7px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #202b39,
+            #151c26
+        );
+
+    color: #eaf2ff;
+
+    padding: 0 14px;
+
+    cursor: pointer;
+
+    font-size: 11px;
+
+    font-weight: 600;
+}
+
+button:hover {
+    border-color: #4e8dce;
+}
+
+.primary {
+    background:
+        linear-gradient(
+            180deg,
+            #1976df,
+            #1459ad
+        );
+
+    border-color: #409cff;
+}
+
+.speed-box {
+    margin-left: auto;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #7f8b9d;
+
+    font-size: 11px;
+}
+
+input[type="range"] {
+    width: 85px;
+
+    accent-color: #4b9fff;
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.main {
+    height: calc(100vh - 178px);
+
+    margin: 0 5.8%;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1fr)
+        224px;
+
+    gap: 14px;
+}
+
+
+/* =========================================================
+   TREE PANEL
+========================================================= */
+
+.tree-panel {
+    position: relative;
+
+    min-width: 0;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            rgba(255,255,255,.018) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.018) 1px,
+            transparent 1px
+        ),
+        rgba(8,13,19,.90);
+
+    background-size: 36px 36px;
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    border-radius: 10px;
+
+    overflow: auto;
+}
+
+.tree-title {
+    position: sticky;
+
+    left: 14px;
+    top: 13px;
+
+    width: max-content;
+
+    z-index: 20;
+
+    padding: 5px 9px;
+
+    border-radius: 5px;
+
+    background:
+        rgba(5,10,16,.92);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    color: #8fa0b5;
+
+    font-size: 9px;
+
+    letter-spacing: .8px;
+}
+
+.complete {
+    position: absolute;
+
+    right: 14px;
+    top: 13px;
+
+    z-index: 20;
+
+    padding: 5px 9px;
+
+    border:
+        1px solid rgba(65,150,240,.35);
+
+    border-radius: 5px;
+
+    color: #63b3ff;
+
+    font-size: 9px;
+
+    background:
+        rgba(10,30,50,.6);
+}
+
+#treeSvg {
+    display: block;
+
+    margin-top: -25px;
+}
+
+
+/* =========================================================
+   STRAIGHT ARROWS
+========================================================= */
+
+.edge {
+    stroke-width: 1.8;
+
+    opacity: .78;
+
+    filter:
+        drop-shadow(
+            0 0 4px
+            rgba(55,150,255,.30)
+        );
+}
+
+.edge-new {
+    stroke-width: 2.5;
+
+    opacity: 1;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(70,170,255,.8)
+        )
+        drop-shadow(
+            0 0 13px
+            rgba(70,170,255,.45)
+        );
+}
+
+
+/* =========================================================
+   EDGE LABEL
+========================================================= */
+
+.edge-label-bg {
+    fill:
+        rgba(8,15,24,.95);
+
+    stroke:
+        rgba(85,155,220,.55);
+
+    stroke-width: 1;
+}
+
+.edge-label {
+    fill: #c8e5ff;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    text-anchor: middle;
+
+    dominant-baseline: middle;
+}
+
+
+/* =========================================================
+   NODE
+========================================================= */
+
+.node {
+    cursor: default;
+}
+
+.node-circle {
+    stroke-width: 2;
+}
+
+.node-text {
+    fill: #f1f6fc;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-anchor: middle;
+
+    dominant-baseline: middle;
+}
+
+.node-sub {
+    fill: #9caabd;
+
+    font-size: 8px;
+
+    text-anchor: middle;
+}
+
+
+/* =========================================================
+   DIFFERENT DP NODE COLORS
+========================================================= */
+
+/* BLUE */
+
+.node-blue .node-circle {
+    fill: rgba(40,145,255,.15);
+
+    stroke: #49a8ff;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(45,155,255,.8)
+        )
+        drop-shadow(
+            0 0 16px
+            rgba(45,155,255,.4)
+        );
+}
+
+
+/* CYAN */
+
+.node-cyan .node-circle {
+    fill: rgba(30,210,235,.14);
+
+    stroke: #43dff5;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(40,220,240,.8)
+        )
+        drop-shadow(
+            0 0 15px
+            rgba(40,220,240,.4)
+        );
+}
+
+
+/* TEAL */
+
+.node-teal .node-circle {
+    fill: rgba(35,200,165,.14);
+
+    stroke: #40d9b5;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(50,220,180,.8)
+        )
+        drop-shadow(
+            0 0 15px
+            rgba(50,220,180,.4)
+        );
+}
+
+
+/* ORANGE */
+
+.node-orange .node-circle {
+    fill: rgba(255,145,45,.14);
+
+    stroke: #ff9c45;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(255,145,45,.8)
+        )
+        drop-shadow(
+            0 0 15px
+            rgba(255,145,45,.4)
+        );
+}
+
+
+/* PINK */
+
+.node-pink .node-circle {
+    fill: rgba(245,90,170,.14);
+
+    stroke: #ff71b8;
+
+    filter:
+        drop-shadow(
+            0 0 5px
+            rgba(245,90,170,.8)
+        )
+        drop-shadow(
+            0 0 15px
+            rgba(245,90,170,.4)
+        );
+}
+
+
+/* BASE CASE GREEN */
+
+.node-base .node-circle {
+    fill: rgba(55,220,135,.15);
+
+    stroke: #52e99a;
+
+    filter:
+        drop-shadow(
+            0 0 6px
+            rgba(60,230,145,.85)
+        )
+        drop-shadow(
+            0 0 18px
+            rgba(60,230,145,.45)
+        );
+}
+
+
+/* REUSED PURPLE */
+
+.node-reuse .node-circle {
+    fill: rgba(170,85,255,.16);
+
+    stroke: #b477ff;
+
+    filter:
+        drop-shadow(
+            0 0 6px
+            rgba(180,100,255,.9)
+        )
+        drop-shadow(
+            0 0 18px
+            rgba(180,100,255,.5)
+        );
+}
+
+
+/* =========================================================
+   SIDE PANEL
+========================================================= */
+
+.side {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+.card {
+    padding: 12px;
+
+    background:
+        rgba(20,25,35,.88);
+
+    border:
+        1px solid rgba(255,255,255,.08);
+
+    border-radius: 9px;
+}
+
+.card-title {
+    font-size: 9px;
+
+    letter-spacing: .8px;
+
+    color: #718096;
+
+    margin-bottom: 5px;
+}
+
+.value {
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+.explanation {
+    font-size: 11px;
+
+    line-height: 1.5;
+
+    color: #a7b3c4;
+}
+
+.why-btn {
+    width: 100%;
+
+    height: 36px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #183b72,
+            #41215e
+        );
+
+    border-color: #5c75c9;
+}
+
+.legend {
+    font-size: 10px;
+
+    line-height: 2;
+
+    color: #9caabd;
+}
+
+.dot {
+    display: inline-block;
+
+    width: 9px;
+    height: 9px;
+
+    border-radius: 50%;
+
+    margin-right: 6px;
+}
+
+.blue-dot {
+    background: #49a8ff;
+    box-shadow: 0 0 7px #49a8ff;
+}
+
+.green-dot {
+    background: #52e99a;
+    box-shadow: 0 0 7px #52e99a;
+}
+
+.purple-dot {
+    background: #ad69ff;
+    box-shadow: 0 0 7px #ad69ff;
+}
+
+.red-dot {
+    background: #ff5360;
+    box-shadow: 0 0 7px #ff5360;
+}
+
+.yellow-dot {
+    background: #ffd044;
+    box-shadow: 0 0 7px #ffd044;
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.toast {
+    position: fixed;
+
+    left: 50%;
+    top: 90px;
+
+    transform:
+        translateX(-50%)
+        translateY(-20px);
+
+    padding: 10px 17px;
+
+    border-radius: 8px;
+
+    background:
+        rgba(16,23,34,.96);
+
+    border:
+        1px solid #a765ff;
+
+    color: #d9bcff;
+
+    box-shadow:
+        0 0 25px
+        rgba(165,90,255,.3);
+
+    font-size: 11px;
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transition: .25s;
+
+    z-index: 200;
+}
+
+.toast.show {
+    opacity: 1;
+
+    transform:
+        translateX(-50%)
+        translateY(0);
+}
+
+
+/* =========================================================
+   WHY DP MODAL
+========================================================= */
+
+.modal {
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100;
+
+    background:
+        rgba(0,0,0,.68);
+
+    backdrop-filter: blur(6px);
+
+    align-items: center;
+
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-box {
+    width: 1100px;
+
+    max-width: 92vw;
+
+    height: 680px;
+
+    max-height: 88vh;
+
+    background: #0d131c;
+
+    border:
+        1px solid rgba(255,255,255,.12);
+
+    border-radius: 13px;
+
+    box-shadow:
+        0 25px 80px
+        rgba(0,0,0,.6);
+
+    display: grid;
+
+    grid-template-columns:
+        180px 1fr;
+
+    overflow: hidden;
+}
+
+.modal-menu {
+    padding: 16px;
+
+    border-right:
+        1px solid rgba(255,255,255,.08);
+
+    background: #0a1017;
+}
+
+.modal-menu h3 {
+    font-size: 14px;
+
+    margin: 0 0 15px;
+}
+
+.tab {
+    width: 100%;
+
+    text-align: left;
+
+    margin-bottom: 8px;
+}
+
+.tab.active {
+    border-color: #5598ff;
+
+    background: #172b48;
+}
+
+.modal-content {
+    position: relative;
+
+    padding: 18px;
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+.modal-head {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.modal-head h2 {
+    margin: 0;
+
+    font-size: 17px;
+}
+
+.close {
+    width: 32px;
+
+    padding: 0;
+}
+
+.compare-info {
+    margin: 12px 0;
+
+    color: #9caabd;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+.compare-tree {
+    flex: 1;
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    border-radius: 9px;
+
+    overflow: auto;
+
+    background:
+        linear-gradient(
+            rgba(255,255,255,.015) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,.015) 1px,
+            transparent 1px
+        ),
+        #080d13;
+
+    background-size: 30px 30px;
+}
+
+#compareSvg {
+    display: block;
+}
+
+.run-compare {
+    margin-top: 10px;
+}
+
+
+/* =========================================================
+   NON-BLOCKING COMPLEXITY CARD
+========================================================= */
+
+.complexity {
+    position: fixed;
+
+    right: 28px;
+
+    bottom: 28px;
+
+    z-index: 300;
+
+    display: none;
+}
+
+.complexity.show {
+    display: block;
+}
+
+.complexity-box {
+    width: 360px;
+
+    padding: 20px;
+
+    background:
+        rgba(14,21,31,.96);
+
+    border:
+        1px solid
+        rgba(80,160,255,.32);
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 18px 55px
+        rgba(0,0,0,.55),
+        0 0 25px
+        rgba(50,130,255,.12);
+}
+
+.complexity-box h2 {
+    margin: 0 0 15px;
+
+    font-size: 18px;
+}
+
+.complex-row {
+    padding: 10px 0;
+
+    border-bottom:
+        1px solid
+        rgba(255,255,255,.07);
+}
+
+.complex-label {
+    font-size: 9px;
+
+    color: #748297;
+
+    letter-spacing: .7px;
+}
+
+.complex-value {
+    margin-top: 4px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    color: #b9dcff;
+}
+
+.modal-close-btn {
+    width: 100%;
+
+    margin-top: 15px;
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header>
+
+    <div class="title">
+        Matrix Chain Multiplication
+    </div>
+
+    <div class="subtitle">
+        Interactive Dynamic Programming Visualizer
+    </div>
+
+    <div class="live">
+        <span class="live-dot"></span>
+        LIVE ALGORITHM
+    </div>
+
+</header>
+
+
+<!-- =====================================================
+     CONTROLS
+===================================================== -->
+
+<div class="controls">
+
+    <label>
+        Matrix dimensions
+    </label>
+
+    <input
+        id="dims"
+        value="10,20,30,40"
+    >
+
+    <button
+        class="primary"
+        onclick="startDP()"
+    >
+        ▶ Run DP
+    </button>
+
+    <button
+        onclick="bottomUp()"
+    >
+        Bottom-Up
+    </button>
+
+    <button
+        onclick="resetAll()"
+    >
+        Reset
+    </button>
+
+    <div class="speed-box">
+
+        Speed
+
+        <input
+            id="speed"
+            type="range"
+            min="100"
+            max="1200"
+            value="500"
+        >
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<div class="main">
+
+
+    <!-- TREE -->
+
+    <section
+        class="tree-panel"
+        id="treePanel"
+    >
+
+        <div class="tree-title">
+            LIVE STATE-SPACE TREE
+        </div>
+
+        <div
+            class="complete"
+            id="status"
+        >
+            READY
+        </div>
+
+        <svg
+            id="treeSvg"
+            width="1800"
+            height="650"
+        >
+
+            <defs>
+
+                <marker
+                    id="arrow"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="7"
+                    refY="4"
+                    orient="auto"
+                >
+
+                    <path
+                        d="M0,0 L8,4 L0,8 Z"
+                        fill="#69b8ff"
+                    />
+
+                </marker>
+
+
+                <marker
+                    id="arrowPurple"
+                    markerWidth="8"
+                    markerHeight="8"
+                    refX="7"
+                    refY="4"
+                    orient="auto"
+                >
+
+                    <path
+                        d="M0,0 L8,4 L0,8 Z"
+                        fill="#b477ff"
+                    />
+
+                </marker>
+
+            </defs>
+
+
+            <g id="treeEdges"></g>
+
+            <g id="treeNodes"></g>
+
+        </svg>
+
+    </section>
+
+
+    <!-- SIDE PANEL -->
+
+    <aside class="side">
+
+
+        <div class="card">
+
+            <div class="card-title">
+                CURRENT STATE
+            </div>
+
+            <div
+                class="value"
+                id="currentState"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                STATES CREATED
+            </div>
+
+            <div
+                class="value"
+                id="statesCreated"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                DP REUSES
+            </div>
+
+            <div
+                class="value"
+                id="dpReuses"
+            >
+                0
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                MINIMUM COST
+            </div>
+
+            <div
+                class="value"
+                id="minCost"
+            >
+                —
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                EXPLANATION
+            </div>
+
+            <div
+                class="explanation"
+                id="explanation"
+            >
+                Press Run DP to start the visualization.
+            </div>
+
+        </div>
+
+
+        <button
+            class="why-btn"
+            onclick="openComparison()"
+        >
+            💡 WHY DP?
+        </button>
+
+
+        <div class="card">
+
+            <div class="card-title">
+                VISUALIZATION
+            </div>
+
+            <div class="legend">
+
+                <div>
+                    <span class="dot blue-dot"></span>
+                    New DP State
+                </div>
+
+                <div>
+                    <span class="dot green-dot"></span>
+                    Base State
+                </div>
+
+                <div>
+                    <span class="dot purple-dot"></span>
+                    Reused DP State
+                </div>
+
+                <div>
+                    <span class="dot red-dot"></span>
+                    Repeated Recursion
+                </div>
+
+                <div>
+                    <span class="dot yellow-dot"></span>
+                    Backtracking
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    class="toast"
+    id="toast"
+>
+    DP state reused
+</div>
+
+
+<!-- =====================================================
+     WHY DP MODAL
+===================================================== -->
+
+<div
+    class="modal"
+    id="comparisonModal"
+>
+
+    <div class="modal-box">
+
+        <div class="modal-menu">
+
+            <h3>
+                WHY DP?
+            </h3>
+
+
+            <button
+                class="tab active"
+                id="recTab"
+                onclick="selectComparison('recursion')"
+            >
+                Recursion
+            </button>
+
+
+            <button
+                class="tab"
+                id="backTab"
+                onclick="selectComparison('backtracking')"
+            >
+                Backtracking
+            </button>
+
+        </div>
+
+
+        <div class="modal-content">
+
+            <div class="modal-head">
+
+                <h2 id="compareTitle">
+                    Normal Recursion
+                </h2>
+
+                <button
+                    class="close"
+                    onclick="closeComparison()"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div
+                class="compare-info"
+                id="compareInfo"
+            >
+                Normal recursion repeatedly solves the same
+                overlapping subproblems.
+            </div>
+
+
+            <div class="compare-tree">
+
+                <svg id="compareSvg">
+
+                    <defs>
+
+                        <marker
+                            id="compareArrowRed"
+                            markerWidth="8"
+                            markerHeight="8"
+                            refX="7"
+                            refY="4"
+                            orient="auto"
+                        >
+
+                            <path
+                                d="M0,0 L8,4 L0,8 Z"
+                                fill="#ff5963"
+                            />
+
+                        </marker>
+
+
+                        <marker
+                            id="compareArrowYellow"
+                            markerWidth="8"
+                            markerHeight="8"
+                            refX="7"
+                            refY="4"
+                            orient="auto"
+                        >
+
+                            <path
+                                d="M0,0 L8,4 L0,8 Z"
+                                fill="#ffd044"
+                            />
+
+                        </marker>
+
+                    </defs>
+
+                    <g id="compareEdges"></g>
+
+                    <g id="compareNodes"></g>
+
+                </svg>
+
+            </div>
+
+
+            <button
+                class="primary run-compare"
+                onclick="runComparison()"
+            >
+                ▶ Run Visualization
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     COMPLEXITY
+===================================================== -->
+
+<div
+    class="complexity"
+    id="complexityModal"
+>
+
+    <div class="complexity-box">
+
+        <h2 id="complexityTitle">
+            Dynamic Programming Complete
+        </h2>
+
+
+        <div class="complex-row">
+
+            <div class="complex-label">
+                TIME COMPLEXITY
+            </div>
+
+            <div
+                class="complex-value"
+                id="complexTime"
+            >
+                O(n³)
+            </div>
+
+        </div>
+
+
+        <div class="complex-row">
+
+            <div class="complex-label">
+                SPACE COMPLEXITY
+            </div>
+
+            <div
+                class="complex-value"
+                id="complexSpace"
+            >
+                O(n²)
+            </div>
+
+        </div>
+
+
+        <div class="complex-row">
+
+            <div class="complex-label">
+                KEY IDEA
+            </div>
+
+            <div
+                class="complex-value"
+                id="complexIdea"
+            >
+                Store and reuse overlapping subproblems.
+            </div>
+
+        </div>
+
+
+        <button
+            class="primary modal-close-btn"
+            onclick="closeComplexity()"
+        >
+            Continue
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audioCtx = null;
+
+
+function unlockAudio() {
+
+    if (!audioCtx) {
+
+        audioCtx =
+            new (
+                window.AudioContext ||
+                window.webkitAudioContext
+            )();
+
+    }
+
+    if (
+        audioCtx.state === "suspended"
+    ) {
+
+        audioCtx.resume();
+
+    }
+
+}
+
+
+/* =========================================================
+   NODE CREATION SOUND
+========================================================= */
+
+function beep(
+    frequency,
+    duration,
+    volume = .12,
+    type = "sine"
+) {
+
+    if (!audioCtx) return;
+
+
+    const oscillator =
+        audioCtx.createOscillator();
+
+    const gain =
+        audioCtx.createGain();
+
+
+    oscillator.type =
+        type;
+
+
+    oscillator.frequency.setValueAtTime(
+        frequency,
+        audioCtx.currentTime
+    );
+
+
+    gain.gain.setValueAtTime(
+        volume,
+        audioCtx.currentTime
+    );
+
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audioCtx.currentTime + duration
+    );
+
+
+    oscillator.connect(gain);
+
+    gain.connect(
+        audioCtx.destination
+    );
+
+
+    oscillator.start();
+
+    oscillator.stop(
+        audioCtx.currentTime +
+        duration
+    );
+
+}
+
+
+function nodeCreatedSound() {
+
+    if (!audioCtx) return;
+
+
+    beep(
+        620,
+        .08,
+        .14,
+        "sine"
+    );
+
+
+    setTimeout(
+        () => {
+
+            beep(
+                820,
+                .07,
+                .10,
+                "sine"
+            );
+
+        },
+        45
+    );
+
+}
+
+
+function reuseSound() {
+
+    if (!audioCtx) return;
+
+
+    beep(
+        420,
+        .10,
+        .14,
+        "triangle"
+    );
+
+
+    setTimeout(
+        () => {
+
+            beep(
+                680,
+                .14,
+                .12,
+                "triangle"
+            );
+
+        },
+        90
+    );
+
+}
+
+
+function completeSound() {
+
+    if (!audioCtx) return;
+
+
+    beep(
+        500,
+        .10,
+        .11
+    );
+
+
+    setTimeout(
+        () =>
+            beep(
+                650,
+                .10,
+                .11
+            ),
+        100
+    );
+
+
+    setTimeout(
+        () =>
+            beep(
+                850,
+                .18,
+                .13
+            ),
+        200
+    );
+
+}
+
+
+/* =========================================================
+   SYNCHRONIZED VOICE
+========================================================= */
+
+let voices = [];
+
+function loadVoices() {
+
+    voices =
+        speechSynthesis.getVoices();
+
+}
+
+speechSynthesis.onvoiceschanged =
+    loadVoices;
+
+loadVoices();
+
+
+/*
+    IMPORTANT:
+    This function waits until the sentence
+    has actually finished.
+*/
+
+function speakAsync(
+    text,
+    onStart = null
+) {
+
+    return new Promise(
+        resolve => {
+
+            if (
+                !("speechSynthesis" in window)
+            ) {
+
+                if (onStart) {
+                    onStart();
+                }
+
+                resolve();
+
+                return;
+
+            }
+
+
+            const utterance =
+                new SpeechSynthesisUtterance(
+                    text
+                );
+
+
+            const preferred =
+                voices.find(
+                    v =>
+                        /Google US English Female/i
+                            .test(v.name)
+                ) ||
+
+                voices.find(
+                    v =>
+                        /Google.*English/i
+                            .test(v.name)
+                ) ||
+
+                voices.find(
+                    v =>
+                        /Samantha/i
+                            .test(v.name)
+                ) ||
+
+                voices.find(
+                    v =>
+                        /Microsoft.*Female/i
+                            .test(v.name)
+                ) ||
+
+                voices.find(
+                    v =>
+                        /^en-US/i
+                            .test(v.lang)
+                );
+
+
+            if (preferred) {
+
+                utterance.voice =
+                    preferred;
+
+            }
+
+
+            utterance.rate =
+                .90;
+
+            utterance.pitch =
+                1.05;
+
+            utterance.volume =
+                1;
+
+
+            let started = false;
+
+
+            utterance.onstart =
+                () => {
+
+                    started = true;
+
+                    if (onStart) {
+                        onStart();
+                    }
+
+                };
+
+
+            utterance.onend =
+                () => {
+
+                    resolve();
+
+                };
+
+
+            utterance.onerror =
+                () => {
+
+                    resolve();
+
+                };
+
+
+            speechSynthesis.speak(
+                utterance
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   GLOBAL DATA
+========================================================= */
+
+let dims = [];
+
+let n = 0;
+
+let treeNodes = [];
+
+let treeEdges = [];
+
+let memo = {};
+
+let dpReuses = 0;
+
+let stateCount = 0;
+
+let running = false;
+
+let colorIndex = 0;
+
+
+const svg =
+    document.getElementById(
+        "treeSvg"
+    );
+
+const edgesGroup =
+    document.getElementById(
+        "treeEdges"
+    );
+
+const nodesGroup =
+    document.getElementById(
+        "treeNodes"
+    );
+
+
+function sleep(ms) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                ms
+            )
+    );
+
+}
+
+
+function getDelay() {
+
+    return Number(
+        document.getElementById(
+            "speed"
+        ).value
+    );
+
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+function readDimensions() {
+
+    const values =
+        document
+            .getElementById("dims")
+            .value
+            .split(",")
+            .map(
+                x =>
+                    Number(
+                        x.trim()
+                    )
+            )
+            .filter(
+                x =>
+                    Number.isFinite(x)
+                    &&
+                    x > 0
+            );
+
+
+    if (
+        values.length < 2
+    ) {
+
+        alert(
+            "Enter at least two dimensions."
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        values.length > 7
+    ) {
+
+        alert(
+            "Use maximum 7 dimensions for a readable live tree."
+        );
+
+        return false;
+
+    }
+
+
+    dims = values;
+
+    n =
+        dims.length - 1;
+
+
+    return true;
+
+}
+
+
+/* =========================================================
+   NODE COLOR
+========================================================= */
+
+function getNewNodeColor(
+    depth
+) {
+
+    const colors = [
+        "blue",
+        "cyan",
+        "teal",
+        "orange",
+        "pink"
+    ];
+
+
+    return colors[
+        depth % colors.length
+    ];
+
+}
+
+
+/* =========================================================
+   CREATE NODE
+========================================================= */
+
+function createNode(
+    i,
+    j,
+    type,
+    parent = null,
+    k = null
+) {
+
+    let visualType;
+
+
+    if (
+        type === "reuse"
+    ) {
+
+        visualType =
+            "reuse";
+
+    }
+    else if (
+        i === j
+    ) {
+
+        visualType =
+            "base";
+
+    }
+    else {
+
+        visualType =
+            getNewNodeColor(
+                parent
+                    ? parent.depth + 1
+                    : 0
+            );
+
+    }
+
+
+    const node = {
+
+        id:
+            "node_" +
+            Date.now() +
+            "_" +
+            Math.random()
+                .toString(36)
+                .slice(2),
+
+        i,
+
+        j,
+
+        type,
+
+        visualType,
+
+        parent,
+
+        k,
+
+        depth:
+            parent
+                ? parent.depth + 1
+                : 0,
+
+        children: [],
+
+        x: 0,
+
+        y: 0
+
+    };
+
+
+    treeNodes.push(
+        node
+    );
+
+
+    if (parent) {
+
+        parent.children.push(
+            node
+        );
+
+
+        treeEdges.push({
+
+            parent,
+
+            child: node,
+
+            k
+
+        });
+
+    }
+
+
+    stateCount++;
+
+
+    return node;
+
+}
+
+
+/* =========================================================
+   TREE LAYOUT
+========================================================= */
+
+function calculateWidth(
+    node
+) {
+
+    if (
+        node.children.length === 0
+    ) {
+
+        node._width =
+            115;
+
+        return 115;
+
+    }
+
+
+    let total = 0;
+
+
+    node.children.forEach(
+        child => {
+
+            total +=
+                calculateWidth(
+                    child
+                );
+
+        }
+    );
+
+
+    total +=
+        40 *
+        (
+            node.children.length - 1
+        );
+
+
+    node._width =
+        Math.max(
+            115,
+            total
+        );
+
+
+    return node._width;
+
+}
+
+
+function positionNode(
+    node,
+    left
+) {
+
+    const levelGap =
+        110;
+
+
+    node.y =
+        70 +
+        node.depth *
+        levelGap;
+
+
+    if (
+        node.children.length === 0
+    ) {
+
+        node.x =
+            left +
+            node._width / 2;
+
+        return;
+
+    }
+
+
+    let cursor =
+        left;
+
+
+    node.children.forEach(
+        child => {
+
+            positionNode(
+                child,
+                cursor
+            );
+
+
+            cursor +=
+                child._width +
+                40;
+
+        }
+    );
+
+
+    node.x =
+        (
+            node.children[0].x +
+            node.children[
+                node.children.length - 1
+            ].x
+        ) / 2;
+
+}
+
+
+function layoutTree() {
+
+    if (
+        treeNodes.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const root =
+        treeNodes[0];
+
+
+    calculateWidth(
+        root
+    );
+
+
+    positionNode(
+        root,
+        100
+    );
+
+
+    let maxX = 0;
+
+    let maxY = 0;
+
+
+    treeNodes.forEach(
+        node => {
+
+            maxX =
+                Math.max(
+                    maxX,
+                    node.x
+                );
+
+
+            maxY =
+                Math.max(
+                    maxY,
+                    node.y
+                );
+
+        }
+    );
+
+
+    /*
+        Keep root in the middle instead
+        of throwing the newest branch
+        toward the left side.
+    */
+
+    const canvasWidth =
+        Math.max(
+            1800,
+            maxX + 200
+        );
+
+
+    const shift =
+        canvasWidth / 2 -
+        root.x;
+
+
+    treeNodes.forEach(
+        node => {
+
+            node.x +=
+                shift;
+
+        }
+    );
+
+
+    svg.setAttribute(
+        "width",
+        canvasWidth
+    );
+
+
+    svg.setAttribute(
+        "height",
+        Math.max(
+            620,
+            maxY + 120
+        )
+    );
+
+}
+
+
+/* =========================================================
+   STRAIGHT EDGE
+========================================================= */
+
+function drawStraightEdge(
+    parent,
+    child
+) {
+
+    const line =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+        );
+
+
+    line.setAttribute(
+        "x1",
+        parent.x
+    );
+
+
+    line.setAttribute(
+        "y1",
+        parent.y + 30
+    );
+
+
+    line.setAttribute(
+        "x2",
+        child.x
+    );
+
+
+    line.setAttribute(
+        "y2",
+        child.y - 30
+    );
+
+
+    return line;
+
+}
+
+
+/* =========================================================
+   DRAW TREE
+========================================================= */
+
+function redrawTree(
+    newNode = null
+) {
+
+    layoutTree();
+
+
+    edgesGroup.innerHTML =
+        "";
+
+
+    /*
+        STRAIGHT ARROWS
+    */
+
+    treeEdges.forEach(
+        edge => {
+
+            const line =
+                drawStraightEdge(
+                    edge.parent,
+                    edge.child
+                );
+
+
+            line.setAttribute(
+                "class",
+                edge.child === newNode
+                    ? "edge edge-new"
+                    : "edge"
+            );
+
+
+            line.setAttribute(
+                "stroke",
+                edge.child.type === "reuse"
+                    ? "#b477ff"
+                    : "#69b8ff"
+            );
+
+
+            line.setAttribute(
+                "marker-end",
+                edge.child.type === "reuse"
+                    ? "url(#arrowPurple)"
+                    : "url(#arrow)"
+            );
+
+
+            edgesGroup.appendChild(
+                line
+            );
+
+
+            /*
+                LIVE ARROW ANIMATION
+            */
+
+            if (
+                edge.child === newNode
+            ) {
+
+                const length =
+                    Math.sqrt(
+                        Math.pow(
+                            edge.child.x -
+                            edge.parent.x,
+                            2
+                        )
+                        +
+                        Math.pow(
+                            edge.child.y -
+                            edge.parent.y,
+                            2
+                        )
+                    );
+
+
+                line.style.strokeDasharray =
+                    length;
+
+
+                line.style.strokeDashoffset =
+                    length;
+
+
+                requestAnimationFrame(
+                    () => {
+
+                        line.style.transition =
+                            "stroke-dashoffset .45s ease";
+
+                        line.style.strokeDashoffset =
+                            "0";
+
+                    }
+                );
+
+            }
+
+
+            /*
+                k label
+            */
+
+            if (
+                edge.k !== null
+            ) {
+
+                const x =
+                    (
+                        edge.parent.x +
+                        edge.child.x
+                    ) / 2;
+
+
+                const y =
+                    (
+                        edge.parent.y +
+                        edge.child.y
+                    ) / 2;
+
+
+                const bg =
+                    document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "rect"
+                    );
+
+
+                bg.setAttribute(
+                    "x",
+                    x - 19
+                );
+
+                bg.setAttribute(
+                    "y",
+                    y - 10
+                );
+
+                bg.setAttribute(
+                    "width",
+                    38
+                );
+
+                bg.setAttribute(
+                    "height",
+                    20
+                );
+
+                bg.setAttribute(
+                    "rx",
+                    6
+                );
+
+                bg.setAttribute(
+                    "class",
+                    "edge-label-bg"
+                );
+
+
+                edgesGroup.appendChild(
+                    bg
+                );
+
+
+                const text =
+                    document.createElementNS(
+                        "http://www.w3.org/2000/svg",
+                        "text"
+                    );
+
+
+                text.setAttribute(
+                    "x",
+                    x
+                );
+
+                text.setAttribute(
+                    "y",
+                    y
+                );
+
+                text.setAttribute(
+                    "class",
+                    "edge-label"
+                );
+
+
+                text.textContent =
+                    `k = ${edge.k}`;
+
+
+                edgesGroup.appendChild(
+                    text
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+        NODES
+    */
+
+    nodesGroup.innerHTML =
+        "";
+
+
+    treeNodes.forEach(
+        node => {
+
+            const group =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "g"
+                );
+
+
+            group.classList.add(
+                "node",
+                "node-" +
+                node.visualType
+            );
+
+
+            /*
+                Start new node
+                from parent position.
+            */
+
+            if (
+                node === newNode &&
+                node.parent
+            ) {
+
+                group.setAttribute(
+                    "transform",
+                    `translate(
+                        ${node.parent.x},
+                        ${node.parent.y}
+                    )`
+                );
+
+
+                group.style.opacity =
+                    "0";
+
+            }
+            else {
+
+                group.setAttribute(
+                    "transform",
+                    `translate(
+                        ${node.x},
+                        ${node.y}
+                    )`
+                );
+
+
+                group.style.opacity =
+                    "1";
+
+            }
+
+
+            const circle =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "circle"
+                );
+
+
+            circle.setAttribute(
+                "r",
+                "30"
+            );
+
+
+            circle.setAttribute(
+                "class",
+                "node-circle"
+            );
+
+
+            group.appendChild(
+                circle
+            );
+
+
+            const label =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "text"
+                );
+
+
+            label.setAttribute(
+                "class",
+                "node-text"
+            );
+
+
+            label.textContent =
+                `M${node.i},${node.j}`;
+
+
+            group.appendChild(
+                label
+            );
+
+
+            const sub =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "text"
+                );
+
+
+            sub.setAttribute(
+                "class",
+                "node-sub"
+            );
+
+
+            sub.setAttribute(
+                "y",
+                "14"
+            );
+
+
+            if (
+                node.type === "reuse"
+            ) {
+
+                sub.textContent =
+                    "REUSED";
+
+            }
+            else if (
+                node.i === node.j
+            ) {
+
+                sub.textContent =
+                    "BASE";
+
+            }
+            else {
+
+                sub.textContent =
+                    "STATE";
+
+            }
+
+
+            group.appendChild(
+                sub
+            );
+
+
+            nodesGroup.appendChild(
+                group
+            );
+
+
+            /*
+                Animate new node from parent
+                to its final location.
+            */
+
+            if (
+                node === newNode &&
+                node.parent
+            ) {
+
+                requestAnimationFrame(
+                    () => {
+
+                        group.style.transition =
+                            "transform .45s cubic-bezier(.2,.8,.2,1), opacity .25s ease";
+
+
+                        group.style.transform =
+                            `translate(
+                                ${node.x}px,
+                                ${node.y}px
+                            )`;
+
+
+                        group.style.opacity =
+                            "1";
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+
+    /*
+        Keep newest node visible.
+    */
+
+    if (newNode) {
+
+        const panel =
+            document.getElementById(
+                "treePanel"
+            );
+
+
+        setTimeout(
+            () => {
+
+                const target =
+                    newNode.x -
+                    panel.clientWidth / 2;
+
+
+                panel.scrollLeft =
+                    Math.max(
+                        0,
+                        target
+                    );
+
+            },
+            40
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE VOICE
+========================================================= */
+
+async function announceSaved(
+    i,
+    j,
+    value
+) {
+
+    /*
+        THIS IS THE IMPORTANT CHANGE:
+
+        Voice happens when the state
+        is actually saved.
+    */
+
+    document.getElementById(
+        "explanation"
+    ).textContent =
+        `M${i},${j} has been solved and saved in the DP table with cost ${value}.`;
+
+
+    await speakAsync(
+        `State M ${i}, ${j} has been solved and saved in the dynamic programming table with cost ${value}.`
+    );
+
+}
+
+
+/* =========================================================
+   REUSE VOICE
+========================================================= */
+
+async function announceReuse(
+    i,
+    j
+) {
+
+    document.getElementById(
+        "explanation"
+    ).textContent =
+        `M${i},${j} was already solved. Dynamic programming reuses its stored result instead of solving it again.`;
+
+
+    await speakAsync(
+        `State M ${i}, ${j} was already solved. Dynamic programming reuses the stored result instead of solving it again.`
+    );
+
+}
+
+
+/* =========================================================
+   TOP-DOWN DP
+========================================================= */
+
+async function solveDP(
+    i,
+    j,
+    parent = null,
+    incomingK = null
+) {
+
+    const key =
+        `${i},${j}`;
+
+
+    /*
+        REUSE
+    */
+
+    if (
+        memo[key] !== undefined
+    ) {
+
+        dpReuses++;
+
+
+        document.getElementById(
+            "dpReuses"
+        ).textContent =
+            dpReuses;
+
+
+        document.getElementById(
+            "currentState"
+        ).textContent =
+            `M${i},${j}`;
+
+
+        reuseSound();
+
+
+        showToast(
+            `DP reused M${i},${j}`
+        );
+
+
+        /*
+            Purple reused node
+        */
+
+        if (parent) {
+
+            const reusedNode =
+                createNode(
+                    i,
+                    j,
+                    "reuse",
+                    parent,
+                    incomingK
+                );
+
+
+            redrawTree(
+                reusedNode
+            );
+
+
+            await sleep(
+                Math.min(
+                    getDelay(),
+                    400
+                )
+            );
+
+        }
+
+
+        /*
+            Voice at the reuse event
+        */
+
+        await announceReuse(
+            i,
+            j
+        );
+
+
+        return memo[key];
+
+    }
+
+
+    /*
+        NEW STATE
+    */
+
+    const node =
+        createNode(
+            i,
+            j,
+            "new",
+            parent,
+            incomingK
+        );
+
+
+    document.getElementById(
+        "currentState"
+    ).textContent =
+        `M${i},${j}`;
+
+
+    document.getElementById(
+        "statesCreated"
+    ).textContent =
+        stateCount;
+
+
+    /*
+        SOUND IMMEDIATELY
+        WHEN NODE IS CREATED
+    */
+
+    nodeCreatedSound();
+
+
+    redrawTree(
+        node
+    );
+
+
+    await sleep(
+        getDelay()
+    );
+
+
+    /*
+        BASE
+    */
+
+    if (
+        i === j
+    ) {
+
+        memo[key] =
+            0;
+
+
+        /*
+            Voice happens exactly
+            when base state gets saved.
+        */
+
+        await announceSaved(
+            i,
+            j,
+            0
+        );
+
+
+        return 0;
+
+    }
+
+
+    let best =
+        Infinity;
+
+
+    /*
+        TRY SPLITS
+    */
+
+    for (
+        let k = i;
+        k < j;
+        k++
+    ) {
+
+        document.getElementById(
+            "explanation"
+        ).textContent =
+            `Trying split k = ${k} for M${i},${j}.`;
+
+
+        await sleep(
+            getDelay() * .35
+        );
+
+
+        const left =
+            await solveDP(
+                i,
+                k,
+                node,
+                k
+            );
+
+
+        const right =
+            await solveDP(
+                k + 1,
+                j,
+                node,
+                k
+            );
+
+
+        const cost =
+            left +
+            right +
+            dims[i - 1] *
+            dims[k] *
+            dims[j];
+
+
+        best =
+            Math.min(
+                best,
+                cost
+            );
+
+
+        document.getElementById(
+            "minCost"
+        ).textContent =
+            best;
+
+    }
+
+
+    /*
+        SAVE STATE
+    */
+
+    memo[key] =
+        best;
+
+
+    /*
+        Voice happens HERE,
+        when state is actually saved.
+    */
+
+    await announceSaved(
+        i,
+        j,
+        best
+    );
+
+
+    return best;
+
+}
+
+
+/* =========================================================
+   START DP
+========================================================= */
+
+async function startDP() {
+
+    if (running) {
+        return;
+    }
+
+
+    if (!readDimensions()) {
+        return;
+    }
+
+
+    unlockAudio();
+
+
+    resetTreeOnly();
+
+
+    running = true;
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "RUNNING";
+
+
+    document.getElementById(
+        "explanation"
+    ).textContent =
+        "Starting top-down dynamic programming.";
+
+
+    await speakAsync(
+        "Starting top-down dynamic programming. Watch the states being calculated, saved and reused."
+    );
+
+
+    const result =
+        await solveDP(
+            1,
+            n
+        );
+
+
+    document.getElementById(
+        "minCost"
+    ).textContent =
+        result;
+
+
+    document.getElementById(
+        "currentState"
+    ).textContent =
+        `M1,${n}`;
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "COMPLETE";
+
+
+    /*
+        Final conclusion voice.
+        Complexity popup appears exactly
+        when this final voice starts.
+    */
+
+    completeSound();
+
+
+    await speakAsync(
+        `Dynamic programming completed. The minimum multiplication cost is ${result}.`,
+        () => {
+
+            showComplexity(
+                "Dynamic Programming Complete",
+                "O(n³)",
+                "O(n²)",
+                "Store and reuse overlapping subproblems."
+            );
+
+        }
+    );
+
+
+    running = false;
+
+}
+
+
+/* =========================================================
+   BOTTOM-UP
+========================================================= */
+
+async function bottomUp() {
+
+    if (running) {
+        return;
+    }
+
+
+    if (!readDimensions()) {
+        return;
+    }
+
+
+    unlockAudio();
+
+
+    resetTreeOnly();
+
+
+    running = true;
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "RUNNING";
+
+
+    await speakAsync(
+        "Bottom-up dynamic programming fills smaller chains first and builds larger chains from them."
+    );
+
+
+    const dp =
+        Array.from(
+            {
+                length:
+                    n + 1
+            },
+            () =>
+                Array(
+                    n + 1
+                ).fill(0)
+        );
+
+
+    for (
+        let len = 2;
+        len <= n;
+        len++
+    ) {
+
+        for (
+            let i = 1;
+            i <= n - len + 1;
+            i++
+        ) {
+
+            const j =
+                i +
+                len -
+                1;
+
+
+            let best =
+                Infinity;
+
+
+            for (
+                let k = i;
+                k < j;
+                k++
+            ) {
+
+                best =
+                    Math.min(
+                        best,
+
+                        dp[i][k] +
+                        dp[k + 1][j] +
+                        dims[i - 1] *
+                        dims[k] *
+                        dims[j]
+                    );
+
+            }
+
+
+            dp[i][j] =
+                best;
+
+
+            const node =
+                createNode(
+                    i,
+                    j,
+                    "new"
+                );
+
+
+            document.getElementById(
+                "currentState"
+            ).textContent =
+                `M${i},${j}`;
+
+
+            document.getElementById(
+                "statesCreated"
+            ).textContent =
+                stateCount;
+
+
+            nodeCreatedSound();
+
+
+            redrawTree(
+                node
+            );
+
+
+            await sleep(
+                getDelay() * .55
+            );
+
+        }
+
+    }
+
+
+    document.getElementById(
+        "minCost"
+    ).textContent =
+        dp[1][n];
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "COMPLETE";
+
+
+    completeSound();
+
+
+    await speakAsync(
+        `Bottom-up dynamic programming completed. The minimum multiplication cost is ${dp[1][n]}.`,
+        () => {
+
+            showComplexity(
+                "Bottom-Up DP Complete",
+                "O(n³)",
+                "O(n²)",
+                "Build the DP table from smaller chains to larger chains."
+            );
+
+        }
+    );
+
+
+    running = false;
+
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetTreeOnly() {
+
+    treeNodes = [];
+
+    treeEdges = [];
+
+    memo = {};
+
+    dpReuses = 0;
+
+    stateCount = 0;
+
+
+    edgesGroup.innerHTML =
+        "";
+
+    nodesGroup.innerHTML =
+        "";
+
+
+    document.getElementById(
+        "statesCreated"
+    ).textContent =
+        "0";
+
+
+    document.getElementById(
+        "dpReuses"
+    ).textContent =
+        "0";
+
+
+    document.getElementById(
+        "minCost"
+    ).textContent =
+        "—";
+
+
+    document.getElementById(
+        "currentState"
+    ).textContent =
+        "—";
+
+
+    document.getElementById(
+        "status"
+    ).textContent =
+        "READY";
+
+
+    document
+        .getElementById(
+            "complexityModal"
+        )
+        .classList.remove(
+            "show"
+        );
+
+}
+
+
+function resetAll() {
+
+    if (running) {
+        return;
+    }
+
+
+    if (
+        "speechSynthesis"
+        in window
+    ) {
+
+        speechSynthesis.cancel();
+
+    }
+
+
+    resetTreeOnly();
+
+
+    document.getElementById(
+        "explanation"
+    ).textContent =
+        "Press Run DP to start the visualization.";
+
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer;
+
+
+function showToast(text) {
+
+    const toast =
+        document.getElementById(
+            "toast"
+        );
+
+
+    toast.textContent =
+        text;
+
+
+    toast.classList.add(
+        "show"
+    );
+
+
+    clearTimeout(
+        toastTimer
+    );
+
+
+    toastTimer =
+        setTimeout(
+            () => {
+
+                toast.classList.remove(
+                    "show"
+                );
+
+            },
+            1800
+        );
+
+}
+
+
+/* =========================================================
+   COMPLEXITY
+========================================================= */
+
+function showComplexity(
+    title,
+    time,
+    space,
+    idea
+) {
+
+    document.getElementById(
+        "complexityTitle"
+    ).textContent =
+        title;
+
+
+    document.getElementById(
+        "complexTime"
+    ).textContent =
+        time;
+
+
+    document.getElementById(
+        "complexSpace"
+    ).textContent =
+        space;
+
+
+    document.getElementById(
+        "complexIdea"
+    ).textContent =
+        idea;
+
+
+    /*
+        IMPORTANT:
+        This is now a floating card.
+        It does NOT block the tree.
+    */
+
+    document
+        .getElementById(
+            "complexityModal"
+        )
+        .classList.add(
+            "show"
+        );
+
+}
+
+
+function closeComplexity() {
+
+    document
+        .getElementById(
+            "complexityModal"
+        )
+        .classList.remove(
+            "show"
+        );
+
+}
+
+
+/* =========================================================
+   WHY DP
+========================================================= */
+
+let comparisonMode =
+    "recursion";
+
+let compareNodes = [];
+
+let compareEdges = [];
+
+
+function openComparison() {
+
+    document
+        .getElementById(
+            "comparisonModal"
+        )
+        .classList.add(
+            "show"
+        );
+
+
+    selectComparison(
+        "recursion"
+    );
+
+}
+
+
+function closeComparison() {
+
+    document
+        .getElementById(
+            "comparisonModal"
+        )
+        .classList.remove(
+            "show"
+        );
+
+}
+
+
+function selectComparison(
+    mode
+) {
+
+    comparisonMode =
+        mode;
+
+
+    document
+        .getElementById(
+            "recTab"
+        )
+        .classList.toggle(
+            "active",
+            mode === "recursion"
+        );
+
+
+    document
+        .getElementById(
+            "backTab"
+        )
+        .classList.toggle(
+            "active",
+            mode === "backtracking"
+        );
+
+
+    if (
+        mode === "recursion"
+    ) {
+
+        document.getElementById(
+            "compareTitle"
+        ).textContent =
+            "Normal Recursion";
+
+
+        document.getElementById(
+            "compareInfo"
+        ).textContent =
+            "Normal recursion repeatedly solves the same overlapping subproblems. The tree grows exponentially because previous results are not remembered.";
+
+    }
+    else {
+
+        document.getElementById(
+            "compareTitle"
+        ).textContent =
+            "Backtracking";
+
+
+        document.getElementById(
+            "compareInfo"
+        ).textContent =
+            "Backtracking explores alternative split choices and returns through branches. Without memoization, overlapping states can still be recomputed.";
+
+    }
+
+
+    clearComparison();
+
+}
+
+
+/* =========================================================
+   COMPARISON RESET
+========================================================= */
+
+function clearComparison() {
+
+    compareNodes = [];
+
+    compareEdges = [];
+
+
+    document.getElementById(
+        "compareEdges"
+    ).innerHTML =
+        "";
+
+
+    document.getElementById(
+        "compareNodes"
+    ).innerHTML =
+        "";
+
+}
+
+
+/* =========================================================
+   COMPARISON NODE
+========================================================= */
+
+function createCompareNode(
+    i,
+    j,
+    parent,
+    k,
+    type
+) {
+
+    const node = {
+
+        i,
+
+        j,
+
+        parent,
+
+        k,
+
+        depth:
+            parent
+                ? parent.depth + 1
+                : 0,
+
+        type,
+
+        children: [],
+
+        x: 0,
+
+        y: 0
+
+    };
+
+
+    compareNodes.push(
+        node
+    );
+
+
+    if (parent) {
+
+        parent.children.push(
+            node
+        );
+
+
+        compareEdges.push({
+
+            parent,
+
+            child: node,
+
+            k
+
+        });
+
+    }
+
+
+    return node;
+
+}
+
+
+/* =========================================================
+   COMPARISON LAYOUT
+========================================================= */
+
+function calculateCompareWidth(
+    node
+) {
+
+    if (
+        node.children.length === 0
+    ) {
+
+        node._width =
+            90;
+
+        return 90;
+
+    }
+
+
+    let total = 0;
+
+
+    node.children.forEach(
+        child => {
+
+            total +=
+                calculateCompareWidth(
+                    child
+                );
+
+        }
+    );
+
+
+    total +=
+        25 *
+        (
+            node.children.length - 1
+        );
+
+
+    node._width =
+        Math.max(
+            90,
+            total
+        );
+
+
+    return node._width;
+
+}
+
+
+function positionCompare(
+    node,
+    left
+) {
+
+    node.y =
+        50 +
+        node.depth *
+        80;
+
+
+    if (
+        node.children.length === 0
+    ) {
+
+        node.x =
+            left +
+            node._width / 2;
+
+        return;
+
+    }
+
+
+    let cursor =
+        left;
+
+
+    node.children.forEach(
+        child => {
+
+            positionCompare(
+                child,
+                cursor
+            );
+
+
+            cursor +=
+                child._width +
+                25;
+
+        }
+    );
+
+
+    node.x =
+        (
+            node.children[0].x +
+            node.children[
+                node.children.length - 1
+            ].x
+        ) / 2;
+
+}
+
+
+/* =========================================================
+   DRAW COMPARISON
+========================================================= */
+
+function drawComparison(
+    newestNode = null
+) {
+
+    if (
+        compareNodes.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const root =
+        compareNodes[0];
+
+
+    calculateCompareWidth(
+        root
+    );
+
+
+    positionCompare(
+        root,
+        50
+    );
+
+
+    const maxX =
+        Math.max(
+            ...compareNodes.map(
+                n => n.x
+            )
+        );
+
+
+    const maxDepth =
+        Math.max(
+            ...compareNodes.map(
+                n => n.depth
+            )
+        );
+
+
+    const svg =
+        document.getElementById(
+            "compareSvg"
+        );
+
+
+    svg.setAttribute(
+        "width",
+        Math.max(
+            850,
+            maxX + 100
+        )
+    );
+
+
+    svg.setAttribute(
+        "height",
+        Math.max(
+            500,
+            (maxDepth + 1) * 80 + 80
+        )
+    );
+
+
+    const edgeGroup =
+        document.getElementById(
+            "compareEdges"
+        );
+
+
+    const nodeGroup =
+        document.getElementById(
+            "compareNodes"
+        );
+
+
+    edgeGroup.innerHTML =
+        "";
+
+
+    nodeGroup.innerHTML =
+        "";
+
+
+    /*
+        STRAIGHT COMPARISON ARROWS
+    */
+
+    compareEdges.forEach(
+        edge => {
+
+            const line =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+
+
+            line.setAttribute(
+                "x1",
+                edge.parent.x
+            );
+
+
+            line.setAttribute(
+                "y1",
+                edge.parent.y + 23
+            );
+
+
+            line.setAttribute(
+                "x2",
+                edge.child.x
+            );
+
+
+            line.setAttribute(
+                "y2",
+                edge.child.y - 23
+            );
+
+
+            const isBacktracking =
+                comparisonMode ===
+                "backtracking";
+
+
+            line.setAttribute(
+                "stroke",
+                isBacktracking
+                    ? "#ffd044"
+                    : "#ff5963"
+            );
+
+
+            line.setAttribute(
+                "stroke-width",
+                "1.7"
+            );
+
+
+            line.setAttribute(
+                "marker-end",
+                isBacktracking
+                    ? "url(#compareArrowYellow)"
+                    : "url(#compareArrowRed)"
+            );
+
+
+            edgeGroup.appendChild(
+                line
+            );
+
+        }
+    );
+
+
+    /*
+        NODES
+    */
+
+    compareNodes.forEach(
+        node => {
+
+            const g =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "g"
+                );
+
+
+            /*
+                New node initially appears
+                at parent's location.
+            */
+
+            if (
+                node === newestNode &&
+                node.parent
+            ) {
+
+                g.setAttribute(
+                    "transform",
+                    `translate(
+                        ${node.parent.x},
+                        ${node.parent.y}
+                    )`
+                );
+
+                g.style.opacity =
+                    "0";
+
+            }
+            else {
+
+                g.setAttribute(
+                    "transform",
+                    `translate(
+                        ${node.x},
+                        ${node.y}
+                    )`
+                );
+
+            }
+
+
+            const circle =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "circle"
+                );
+
+
+            circle.setAttribute(
+                "r",
+                23
+            );
+
+
+            circle.setAttribute(
+                "fill",
+                comparisonMode ===
+                "backtracking"
+                    ? "rgba(255,190,40,.15)"
+                    : "rgba(255,60,70,.15)"
+            );
+
+
+            circle.setAttribute(
+                "stroke",
+                comparisonMode ===
+                "backtracking"
+                    ? "#ffd044"
+                    : "#ff5963"
+            );
+
+
+            circle.setAttribute(
+                "stroke-width",
+                2
+            );
+
+
+            circle.style.filter =
+                comparisonMode ===
+                "backtracking"
+
+                    ? "drop-shadow(0 0 8px rgba(255,200,50,.5))"
+
+                    : "drop-shadow(0 0 8px rgba(255,70,80,.5))";
+
+
+            g.appendChild(
+                circle
+            );
+
+
+            const text =
+                document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "text"
+                );
+
+
+            text.textContent =
+                `M${node.i},${node.j}`;
+
+
+            text.setAttribute(
+                "fill",
+                "#ffffff"
+            );
+
+
+            text.setAttribute(
+                "font-size",
+                "10"
+            );
+
+
+            text.setAttribute(
+                "font-weight",
+                "700"
+            );
+
+
+            text.setAttribute(
+                "text-anchor",
+                "middle"
+            );
+
+
+            text.setAttribute(
+                "dominant-baseline",
+                "middle"
+            );
+
+
+            g.appendChild(
+                text
+            );
+
+
+            nodeGroup.appendChild(
+                g
+            );
+
+
+            if (
+                node === newestNode &&
+                node.parent
+            ) {
+
+                requestAnimationFrame(
+                    () => {
+
+                        g.style.transition =
+                            "transform .4s ease, opacity .25s ease";
+
+
+                        g.style.transform =
+                            `translate(
+                                ${node.x}px,
+                                ${node.y}px
+                            )`;
+
+
+                        g.style.opacity =
+                            "1";
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   RUN COMPARISON
+========================================================= */
+
+async function runComparison() {
+
+    if (!readDimensions()) {
+        return;
+    }
+
+
+    unlockAudio();
+
+
+    clearComparison();
+
+
+    const root =
+        createCompareNode(
+            1,
+            n,
+            null,
+            null,
+            comparisonMode
+        );
+
+
+    nodeCreatedSound();
+
+
+    drawComparison(
+        root
+    );
+
+
+    await sleep(300);
+
+
+    if (
+        comparisonMode ===
+        "recursion"
+    ) {
+
+        await speakAsync(
+            "Normal recursion begins. Notice how the same matrix states can appear again and again."
+        );
+
+
+        await recursiveCompare(
+            1,
+            n,
+            root,
+            0
+        );
+
+
+        completeSound();
+
+
+        await speakAsync(
+            "Normal recursion has exponential growth because overlapping subproblems are recomputed.",
+            () => {
+
+                showComplexity(
+                    "Normal Recursion",
+                    "Exponential",
+                    "O(n)",
+                    "Repeatedly recomputes overlapping subproblems."
+                );
+
+            }
+        );
+
+    }
+    else {
+
+        await speakAsync(
+            "Backtracking begins. It explores different split choices and returns through the branches."
+        );
+
+
+        await backtrackCompare(
+            1,
+            n,
+            root,
+            0
+        );
+
+
+        completeSound();
+
+
+        await speakAsync(
+            "Backtracking also performs exponential work when overlapping states are not stored.",
+            () => {
+
+                showComplexity(
+                    "Backtracking",
+                    "Exponential",
+                    "O(n)",
+                    "Explores alternative split choices without storing states."
+                );
+
+            }
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   RECURSION
+========================================================= */
+
+async function recursiveCompare(
+    i,
+    j,
+    parent,
+    depth
+) {
+
+    if (
+        depth > 5 ||
+        i === j
+    ) {
+
+        return;
+
+    }
+
+
+    for (
+        let k = i;
+        k < j;
+        k++
+    ) {
+
+        const left =
+            createCompareNode(
+                i,
+                k,
+                parent,
+                k,
+                "recursion"
+            );
+
+
+        nodeCreatedSound();
+
+
+        drawComparison(
+            left
+        );
+
+
+        await sleep(
+            Math.max(
+                100,
+                getDelay() * .3
+            )
+        );
+
+
+        await recursiveCompare(
+            i,
+            k,
+            left,
+            depth + 1
+        );
+
+
+        const right =
+            createCompareNode(
+                k + 1,
+                j,
+                parent,
+                k,
+                "recursion"
+            );
+
+
+        nodeCreatedSound();
+
+
+        drawComparison(
+            right
+        );
+
+
+        await sleep(
+            Math.max(
+                100,
+                getDelay() * .3
+            )
+        );
+
+
+        await recursiveCompare(
+            k + 1,
+            j,
+            right,
+            depth + 1
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   BACKTRACKING
+========================================================= */
+
+async function backtrackCompare(
+    i,
+    j,
+    parent,
+    depth
+) {
+
+    if (
+        depth > 5 ||
+        i === j
+    ) {
+
+        return;
+
+    }
+
+
+    for (
+        let k = i;
+        k < j;
+        k++
+    ) {
+
+        const child =
+            createCompareNode(
+                i,
+                j,
+                parent,
+                k,
+                "backtracking"
+            );
+
+
+        nodeCreatedSound();
+
+
+        drawComparison(
+            child
+        );
+
+
+        await sleep(
+            Math.max(
+                120,
+                getDelay() * .35
+            )
+        );
+
+
+        await backtrackCompare(
+            i,
+            k,
+            child,
+            depth + 1
+        );
+
+
+        await backtrackCompare(
+            k + 1,
+            j,
+            child,
+            depth + 1
+        );
+
+
+        /*
+            Backtracking return sound
+        */
+
+        beep(
+            350,
+            .08,
+            .10,
+            "triangle"
+        );
+
+
+        await sleep(
+            Math.max(
+                90,
+                getDelay() * .25
+            )
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
